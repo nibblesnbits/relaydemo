@@ -1,9 +1,10 @@
 import React from 'react';
 import { useFragment, graphql } from 'react-relay/hooks';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { RelayRoute } from '../Router/withRelay';
 import type { OtherQuery } from './__generated__/OtherQuery.graphql';
 import type { Other_name$key } from './__generated__/Other_name.graphql';
+import { Link } from '@react-navigation/native';
 
 export const OtherQueryDef = graphql`
   query OtherQuery {
@@ -28,7 +29,14 @@ function UserName({ viewer }: UserNameProps) {
 }
 
 export default function Other(props: RelayRoute<OtherQuery>) {
-  return <UserName viewer={props.data.viewer} />;
+  return (
+    <View>
+      <UserName viewer={props.data.viewer} />
+      <View>
+        <Link to="Other">Go to Other</Link>
+      </View>
+    </View>
+  );
 }
 
 export const route = {
