@@ -7,6 +7,7 @@ import { RootStackParamList } from '../Navigation.types';
 
 function createRelayStackNavigator(routes: RouteDefinition[]) {
   return withRelay(
+    // @ts-ignore
     relayNavigatorFactory<RootStackParamList>(createNativeStackNavigator()),
     routes,
     LoadingScreen

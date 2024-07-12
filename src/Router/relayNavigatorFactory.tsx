@@ -13,6 +13,7 @@ import type {
   NativeStackNavigationEventMap,
   NativeStackNavigationOptions,
 } from '@react-navigation/native-stack';
+import type { OperationType } from 'relay-runtime';
 
 interface RelayNavigationScreenProps {
   route: RouteProp<ParamListBase, string>;
@@ -46,7 +47,7 @@ type NavigatorFactory<ParamList extends ParamListBase> = ReturnType<
   NavigatorReturnType<ParamList, React.ComponentType<any>>
 >;
 
-type RelayRouteConfig = RouteDefinition &
+type RelayRouteConfig<T extends OperationType> = RouteDefinition<T> &
   RouteConfig<
     ParamListBase,
     keyof ParamListBase,
@@ -55,8 +56,8 @@ type RelayRouteConfig = RouteDefinition &
     EventMapBase
   >;
 
-interface NavigatorWrapperProps {
-  readonly screens: RelayRouteConfig[];
+interface NavigatorWrapperProps<T extends OperationType> {
+  readonly screens: RelayRouteConfig<T>[];
   readonly [key: string]: any;
 }
 
@@ -66,7 +67,7 @@ export default function relayNavigatorFactory<TParamList extends ParamListBase>(
   return function NavigatorWrapper({
     screens,
     ...wrapperProps
-  }: NavigatorWrapperProps) {
+  }: NavigatorWrapperProps<any>) {
     return (
       <navigator.Navigator {...wrapperProps}>
         {screens.map(({ name, component, initialParams, options, ...r }) => (

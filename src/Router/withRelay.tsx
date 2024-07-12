@@ -1,4 +1,9 @@
-import React, { useCallback, useContext, useMemo } from 'react';
+import React, {
+  type ElementType,
+  useCallback,
+  useContext,
+  useMemo,
+} from 'react';
 import {
   type PreloadedQuery,
   usePreloadedQuery,
@@ -78,9 +83,11 @@ type BaseRouteDefinition = {
   component: React.ComponentType<any>;
 };
 
-export type RouteDefinition<T extends OperationType = never> = T extends never
-  ? Readonly<BaseRouteDefinition>
-  : Readonly<BaseRouteDefinition & RelayRouteDefinition<T>>;
+export type RouteDefinition<T extends OperationType = never> = Readonly<
+  T extends never
+    ? BaseRouteDefinition
+    : BaseRouteDefinition & RelayRouteDefinition<T>
+>;
 
 type RelayScreenWrapperProps<T extends OperationType> = RouteDefinition<T> & {
   readonly queryVars: {
@@ -147,8 +154,11 @@ export type RelayNavigatorProps<T extends OperationType = OperationType> =
     screens: RouteDefinition<T>[];
   }>;
 
-export default function withRelay<T extends OperationType = OperationType>(
-  WrappedNavigator: React.ComponentType<any>,
+export default function withRelay<
+  T extends OperationType = OperationType,
+  TNavigator extends ElementType<any> = ElementType<any>
+>(
+  WrappedNavigator: TNavigator,
   routeDefList: RouteDefinition<T>[],
   suspenseFallback: React.ReactNode | JSX.Element | (() => JSX.Element)
 ) {
