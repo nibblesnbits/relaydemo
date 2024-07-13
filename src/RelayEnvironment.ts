@@ -11,7 +11,7 @@ const fetchQuery: ExecuteFunction = async (operation, variables) => {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        // Authorization: `Bearer ${ApiKey}`,
+        Authorization: `Bearer f0f43344f0364b3ca1b9c77ebfc01725`,
       },
       body: JSON.stringify({
         query: operation.text,

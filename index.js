@@ -1,21 +1,12 @@
 import React from 'react';
 import { AppRegistry } from 'react-native';
-import {
-  MD3DarkTheme as DefaultTheme,
-  PaperProvider,
-} from 'react-native-paper';
+import { PaperProvider } from 'react-native-paper';
 import App from './src/App';
 import { name as appName } from './app.json';
-
-const theme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-  },
-};
+import DarkTheme from './src/theme';
 
 const AppComponent = () => (
-  <PaperProvider theme={theme}>
+  <PaperProvider>
     <App />
   </PaperProvider>
 );

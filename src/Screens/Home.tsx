@@ -4,7 +4,7 @@ import { Text } from 'react-native-paper';
 import { RelayRoute } from '../Router/withRelay';
 import type { HomeQuery } from './__generated__/HomeQuery.graphql';
 import type { Home_name$key } from './__generated__/Home_name.graphql';
-// import { Link } from '@react-navigation/native';
+import LinkButton from '../Components/LinkButton';
 
 export const HomeQueryDef = graphql`
   query HomeQuery {
@@ -17,7 +17,6 @@ export const HomeQueryDef = graphql`
 type UserNameProps = { viewer: Home_name$key | null | undefined };
 
 function UserName({ viewer }: UserNameProps) {
-  console.log('UserName');
   const data = useFragment<Home_name$key>(
     graphql`
       fragment Home_name on User {
@@ -32,11 +31,10 @@ function UserName({ viewer }: UserNameProps) {
 }
 
 export default function Home(props: RelayRoute<HomeQuery>) {
-  console.log('Home', props);
   return (
     <>
       <UserName viewer={props.data.viewer} />
-      {/* <Link to={{ screen: 'Other', params: { id: '' } }}>Go to Other</Link> */}
+      <LinkButton to="/Clients" label="Go to Client List" />
     </>
   );
 }
