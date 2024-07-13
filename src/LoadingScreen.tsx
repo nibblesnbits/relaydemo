@@ -1,6 +1,6 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { Text } from 'react-native-paper';
 
 export default function LoadingScreen() {
-  return <Text>Loading...</Text>;
+  return <Text variant="displayLarge">Loading...</Text>;
 }

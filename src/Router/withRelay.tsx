@@ -71,22 +71,26 @@ export type RelayRoute<T extends OperationType> = Readonly<{
   params?: T['variables'];
 }>;
 
-type RelayRouteDefinition<T extends OperationType> = {
+type RelayRouteDefinition<T extends OperationType> = Readonly<{
   query: PreloadableConcreteRequest<T>;
   gqlQuery: GraphQLTaggedNode;
   fetchPolicy?: 'store-or-network' | 'store-and-network' | 'network-only';
   skeleton?: React.ReactNode | JSX.Element | (() => JSX.Element);
-};
+}>;
 
 type BaseRouteDefinition = {
   name: string;
   component: React.ComponentType<any>;
 };
 
-export type RouteDefinition<T extends OperationType = never> = Readonly<
-  T extends never
+export type RouteDefinition<
+  T extends OperationType = OperationType,
+  TScreenProps = unknown
+> = Readonly<
+  (T extends never
     ? BaseRouteDefinition
-    : BaseRouteDefinition & RelayRouteDefinition<T>
+    : BaseRouteDefinition & RelayRouteDefinition<T>) &
+    (TScreenProps extends never ? {} : Omit<TScreenProps, 'component'>)
 >;
 
 type RelayScreenWrapperProps<T extends OperationType> = RouteDefinition<T> & {

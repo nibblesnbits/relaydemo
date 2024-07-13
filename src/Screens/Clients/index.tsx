@@ -1,11 +1,12 @@
 import React from 'react';
 import { graphql } from 'react-relay/hooks';
-import { RelayRoute, RouteDefinition } from '../../Router/withRelay';
+import { RelayRoute } from '../../Router/withRelay';
 import type { ClientsQuery } from './__generated__/ClientsQuery.graphql';
 import ClientTable from './ClientTable';
+import { RelayScreenRouteDefinition } from '../../RootNavigation';
 
 export const ClientsQueryDef = graphql`
-  query ClientsQuery {
+  query ClientsQuery($cursor: String, $count: Int!) {
     ...ClientTable_clients
   }
 `;
@@ -16,9 +17,13 @@ export default function ClientsPage({ data }: ClientsPageProps) {
   return <ClientTable query={data} />;
 }
 
-export const route: RouteDefinition<ClientsQuery> = {
+export const route: RelayScreenRouteDefinition<ClientsQuery> = {
   name: 'Clients',
   gqlQuery: ClientsQueryDef,
   component: ClientsPage,
   query: require('./__generated__/ClientsQuery.graphql.ts'),
+  initialParams: {
+    cursor: null,
+    count: 10,
+  },
 };

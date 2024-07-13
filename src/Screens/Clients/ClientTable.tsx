@@ -33,10 +33,6 @@ function getComparator<T>(
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-// Since 2020 all major browsers ensure sort stability with Array.prototype.sort().
-// stableSort() brings sort stability to non-modern browsers (notably IE11). If you
-// only support modern browsers you can replace stableSort(exampleArray, exampleComparator)
-// with exampleArray.slice().sort(exampleComparator)
 function stableSort<T>(
   array: readonly T[],
   comparator: (a: T, b: T) => number
@@ -49,7 +45,7 @@ function stableSort<T>(
     }
     return a[1] - b[1];
   });
-  return stabilizedThis.map((el) => el[0]);
+  return stabilizedThis.map(([el]) => el);
 }
 
 interface HeadCell<T> {
@@ -112,63 +108,6 @@ function EnhancedTableHead<T>(props: EnhancedTableProps<T>) {
     </DataTable.Header>
   );
 }
-
-// type EnhancedTableToolbarProps = Readonly<{
-//   numSelected: number;
-// }>;
-
-// function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
-//   const { numSelected } = props;
-
-//   return (
-//     <Toolbar
-//       sx={{
-//         pl: { sm: 2 },
-//         pr: { xs: 1, sm: 1 },
-//         ...(numSelected > 0 && {
-//           bgcolor: (theme) =>
-//             alpha(
-//               theme.palette.primary.main,
-//               theme.palette.action.activatedOpacity
-//             ),
-//         }),
-//       }}
-//     >
-//       {numSelected > 0 ? (
-//         <Typography
-//           sx={{ flex: '1 1 100%' }}
-//           color="inherit"
-//           variant="subtitle1"
-//           component="div"
-//         >
-//           {numSelected} selected
-//         </Typography>
-//       ) : (
-//         <Typography
-//           sx={{ flex: '1 1 100%' }}
-//           variant="h6"
-//           id="tableTitle"
-//           component="div"
-//         >
-//           Clients
-//         </Typography>
-//       )}
-//       {numSelected > 0 ? (
-//         <Tooltip title="Delete">
-//           <IconButton>
-//             <DeleteIcon />
-//           </IconButton>
-//         </Tooltip>
-//       ) : (
-//         <Tooltip title="Filter list">
-//           <IconButton>
-//             <FilterListIcon />
-//           </IconButton>
-//         </Tooltip>
-//       )}
-//     </Toolbar>
-//   );
-// }
 
 export default function ClientTable({ query }: ClientTableProps) {
   const { data, refetch } = usePaginationFragment<

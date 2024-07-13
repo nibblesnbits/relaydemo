@@ -2,16 +2,23 @@ import { Environment, Network, RecordSource, Store } from 'relay-runtime';
 import GraphQLApiError from './GraphQLApiError';
 import NetworkError from './NetworkError';
 import type { ExecuteFunction } from 'relay-runtime';
+import * as Keychain from 'react-native-keychain';
 
 // @ts-ignore
 const fetchQuery: ExecuteFunction = async (operation, variables) => {
   try {
+    const credentials = await Keychain.getGenericPassword();
+    if (!credentials) {
+      return {
+        data: { errors: [{ message: 'unauthorized' }] },
+      };
+    }
     const response = await fetch('http://localhost:5900/graphql', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        Authorization: `Bearer f0f43344f0364b3ca1b9c77ebfc01725`,
+        Authorization: `Bearer ${credentials.password}`,
       },
       body: JSON.stringify({
         query: operation.text,
