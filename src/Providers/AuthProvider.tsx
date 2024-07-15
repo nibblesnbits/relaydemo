@@ -67,7 +67,7 @@ export const AuthProvider = ({
   useEffect(() => {
     Keychain.getGenericPassword().then((credentials) => {
       console.log(credentials);
-      if (credentials) {
+      if (credentials && credentials.password) {
         setIsAuthenticated(true);
       }
     });

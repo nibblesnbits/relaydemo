@@ -9,7 +9,7 @@ import { GestureResponderEvent, View } from 'react-native';
 import LinkButton from '../../Components/LinkButton';
 
 export type ClientTableProps = Readonly<{
-  query: ClientTablePaginationQuery['response'];
+  fragmentRef: ClientTable_clients$key;
 }>;
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
@@ -109,7 +109,7 @@ function EnhancedTableHead<T>(props: EnhancedTableProps<T>) {
   );
 }
 
-export default function ClientTable({ query }: ClientTableProps) {
+export default function ClientTable({ fragmentRef }: ClientTableProps) {
   const { data, refetch } = usePaginationFragment<
     ClientTablePaginationQuery,
     ClientTable_clients$key
@@ -141,7 +141,7 @@ export default function ClientTable({ query }: ClientTableProps) {
         }
       }
     `,
-    query
+    fragmentRef
   );
 
   const rows = useMemo(

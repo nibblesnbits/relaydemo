@@ -1,31 +1,49 @@
-import React from 'react';
-// import ErrorBoundary from '../ErrorBoundary';
-import type {
-  ParamListBase,
-  RouteConfig,
-  RouteProp,
-  NavigationState,
-  EventMapBase,
-  createNavigatorFactory,
+import React, { useEffect } from 'react';
+import {
+  type ParamListBase,
+  type RouteConfig,
+  type RouteProp,
+  type NavigationState,
+  type EventMapBase,
+  type createNavigatorFactory,
 } from '@react-navigation/native';
-import type { RouteDefinition } from './withRelay';
+import { useRelayEnvironmentProvider, type RouteDefinition } from './withRelay';
 import type {
   NativeStackNavigationEventMap,
   NativeStackNavigationOptions,
 } from '@react-navigation/native-stack';
 import type { OperationType } from 'relay-runtime';
+import { type EntryPoint, useEntryPointLoader } from 'react-relay/hooks';
 
 interface RelayNavigationScreenProps {
   route: RouteProp<ParamListBase, string>;
+  entryPoint: EntryPoint<any, any>;
   Component: React.ComponentType<any>;
 }
 
 const RelayNavigationScreen = ({
   route,
+  entryPoint,
   Component,
   ...props
 }: RelayNavigationScreenProps) => {
-  return <Component route={route} queryVars={route.params} {...props} />;
+  const provider = useRelayEnvironmentProvider();
+  const [entryPointReference, loadEntryPoint] = useEntryPointLoader(
+    provider,
+    entryPoint
+  );
+
+  useEffect(() => {
+    loadEntryPoint(route.params);
+  }, [loadEntryPoint, route.params]);
+
+  return (
+    <Component
+      route={route}
+      entryPointReference={entryPointReference}
+      {...props}
+    />
+  );
 };
 
 type CreateNavigatorFactoryType<
@@ -47,17 +65,21 @@ type NavigatorFactory<ParamList extends ParamListBase> = ReturnType<
   NavigatorReturnType<ParamList, React.ComponentType<any>>
 >;
 
-type RelayRouteConfig<T extends OperationType> = RouteDefinition<T> &
-  RouteConfig<
-    ParamListBase,
-    keyof ParamListBase,
-    NavigationState,
-    {},
-    EventMapBase
-  >;
+type RelayRouteConfig<TEntryPointComponent> =
+  RouteDefinition<TEntryPointComponent> &
+    RouteConfig<
+      ParamListBase,
+      keyof ParamListBase,
+      NavigationState,
+      {},
+      EventMapBase
+    >;
 
-interface NavigatorWrapperProps<T extends OperationType> {
-  readonly screens: RelayRouteConfig<T>[];
+interface NavigatorWrapperProps<
+  TPreloadedQueries extends Record<string, OperationType>,
+  TNestedEntryPoints extends Record<string, EntryPoint<any, any> | undefined>
+> {
+  readonly screens: RelayRouteConfig<TPreloadedQueries, TNestedEntryPoints>[];
   readonly [key: string]: any;
 }
 
@@ -67,16 +89,11 @@ export default function relayNavigatorFactory<TParamList extends ParamListBase>(
   return function NavigatorWrapper({
     screens,
     ...wrapperProps
-  }: NavigatorWrapperProps<any>) {
+  }: NavigatorWrapperProps<any, any>) {
     return (
       <navigator.Navigator {...wrapperProps}>
-        {screens.map(({ name, component, initialParams, options, ...r }) => (
-          <navigator.Screen
-            key={name}
-            name={name}
-            initialParams={initialParams ?? {}}
-            options={options}
-          >
+        {screens.map(({ component, ...r }) => (
+          <navigator.Screen key={name} name={name}>
             {(props) => (
               <RelayNavigationScreen {...props} {...r} Component={component} />
             )}

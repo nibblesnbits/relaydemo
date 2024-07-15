@@ -6,14 +6,9 @@ import { navigate } from './RootNavigation';
 export default function Login() {
   const { login } = useAuth();
 
-  const handleLogin = useCallback(() => {
-    login('admin', 'admin')
-      .then(() => {
-        navigate('Home');
-      })
-      .catch((e) => {
-        console.error('Login failed', e);
-      });
+  const handleLogin = useCallback(async () => {
+    await login('admin', 'admin');
+    navigate('Home');
   }, [login]);
 
   return (

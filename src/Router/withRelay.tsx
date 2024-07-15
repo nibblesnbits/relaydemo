@@ -1,19 +1,17 @@
-import React, {
-  type ElementType,
-  useCallback,
-  useContext,
-  useMemo,
-} from 'react';
+import React, { useCallback, useContext, useEffect, useMemo } from 'react';
 import {
+  EntryPoint,
+  EntryPointComponent,
+  EntryPointContainer,
+  EntryPointProps,
+  JSResourceReference,
   type PreloadedQuery,
+  useEntryPointLoader,
   usePreloadedQuery,
-  useQueryLoader,
+  useRelayEnvironment,
 } from 'react-relay';
-import type {
-  GraphQLTaggedNode,
-  OperationType,
-  PreloadableConcreteRequest,
-} from 'relay-runtime';
+import type { GraphQLTaggedNode, OperationType } from 'relay-runtime';
+import { TaggedUnion } from 'type-fest';
 
 export type RelayNavigatorContextType = Readonly<{
   suspenseFallback: React.ReactNode | JSX.Element | (() => JSX.Element);
@@ -71,35 +69,26 @@ export type RelayRoute<T extends OperationType> = Readonly<{
   params?: T['variables'];
 }>;
 
-type RelayRouteDefinition<T extends OperationType> = Readonly<{
-  query: PreloadableConcreteRequest<T>;
+export type RouteDefinition<T extends OperationType> = {
+  query: OperationType;
   gqlQuery: GraphQLTaggedNode;
-  fetchPolicy?: 'store-or-network' | 'store-and-network' | 'network-only';
+  getComponent: () => JSResourceReference<TEntryPointComponent>;
   skeleton?: React.ReactNode | JSX.Element | (() => JSX.Element);
-}>;
+};
 
 type BaseRouteDefinition = {
   name: string;
   component: React.ComponentType<any>;
 };
 
-export type RouteDefinition<
-  T extends OperationType = OperationType,
-  TScreenProps = unknown
-> = Readonly<
-  (T extends never
-    ? BaseRouteDefinition
-    : BaseRouteDefinition & RelayRouteDefinition<T>) &
-    (TScreenProps extends never ? {} : Omit<TScreenProps, 'component'>)
->;
+type RelayScreenWrapperProps = {};
 
-type RelayScreenWrapperProps<T extends OperationType> = RouteDefinition<T> & {
-  readonly queryVars: {
-    readonly [key: string]: any;
-  };
-};
+export function useRelayEnvironmentProvider() {
+  const environment = useRelayEnvironment();
+  return useMemo(() => ({ getEnvironment: () => environment }), [environment]);
+}
 
-function RelayScreenWrapper<T extends OperationType>({
+function RelayScreenWrapper<TEntryPointComponent>({
   fetchPolicy,
   query,
   skeleton,
@@ -107,7 +96,7 @@ function RelayScreenWrapper<T extends OperationType>({
   queryVars,
   gqlQuery,
   ...props
-}: RelayScreenWrapperProps<T>) {
+}: RelayScreenWrapperProps) {
   const { suspenseFallback } = useRelayNavigatorContext();
   const [queryReference, loadQuery, disposeQuery] = useQueryLoader(query);
 
@@ -148,7 +137,6 @@ function RelayScreenWrapper<T extends OperationType>({
     </RelayScreenContext.Provider>
   );
 }
-
 export type RelayWrapperProps = Readonly<{
   [key: string]: any;
 }>;
@@ -158,31 +146,110 @@ export type RelayNavigatorProps<T extends OperationType = OperationType> =
     screens: RouteDefinition<T>[];
   }>;
 
-export default function withRelay<
-  T extends OperationType = OperationType,
-  TNavigator extends ElementType<any> = ElementType<any>
->(
-  WrappedNavigator: TNavigator,
-  routeDefList: RouteDefinition<T>[],
+function EntryPointWrapper<
+  TPreloadedQueries extends Record<string, OperationType>,
+  TNestedEntryPoints extends Record<string, EntryPoint<any, any> | undefined>,
+  TRuntimeProps extends {} = {},
+  TExtraProps extends {} | null = {}
+>(): EntryPointComponent<
+  TPreloadedQueries,
+  TNestedEntryPoints,
+  TRuntimeProps,
+  TExtraProps
+> {
+  return function EntryPointComponentWrapper(
+    props: EntryPointProps<
+      TPreloadedQueries,
+      TNestedEntryPoints,
+      TRuntimeProps,
+      TExtraProps
+    >
+  ) {
+    return <RelayScreenWrapper {...props} />;
+  };
+}
+
+type Tagged = TaggedUnion<
+  'query',
+  Record<string, RouteDefinition<OperationType>>
+>;
+
+export default function withRelay<TRoutes extends RouteDefinition<OperationType>[]>(
+  routeDefList: TRoutes,
+  WrappedNavigator: EntryPointComponent<
+    Record<string, TRoutes[number]['query']>,
+    {}
+  >,
   suspenseFallback: React.ReactNode | JSX.Element | (() => JSX.Element)
 ) {
-  const screens = routeDefList.map(({ query, component, ...rest }) => {
-    return {
-      ...rest,
-      component: function RelayQueryScreen(props: RelayScreenWrapperProps<T>) {
-        return (
-          <RelayScreenWrapper {...props} query={query} component={component} />
-        );
-      },
-    };
-  });
+  const screens = Object.entries(routeDefList).map(
+    ([name, { resource, skeleton, gqlQuery, ...rest }]) => {
+      return {
+        ...rest,
+        component: function RelayEntryPointScreen(
+          props: RelayScreenWrapperProps
+        ) {
+          const entryPoint = useMemo(
+            () =>
+              ({
+                root: resource,
+                getPreloadProps(vars) {
+                  return {
+                    queries: {
+                      [name]: gqlQuery,
+                    },
+                  };
+                },
+              } as EntryPoint<Record<string, TRoutes[number]['query']>, {}>),
+            []
+          );
+          const provider = useRelayEnvironmentProvider();
+          const [entryPointReference, loadEntryPoint, dispose] =
+            useEntryPointLoader<typeof entryPoint>(provider, entryPoint);
+
+          useEffect(() => {
+            loadEntryPoint({});
+          }, [loadEntryPoint]);
+          useEffect(() => () => dispose(), [dispose]);
+
+          if (!entryPointReference) {
+            return skeleton ?? suspenseFallback;
+          }
+
+          return (
+            <EntryPointContainer
+              entryPointReference={entryPointReference}
+              props={props}
+            />
+          );
+        },
+      };
+    }
+  );
 
   return function RelayContextWrapper(wrapperProps: any) {
-    const contextValue = React.useMemo(() => ({ suspenseFallback }), []);
     return (
-      <RelayNavigatorContext.Provider value={contextValue}>
+      <RelayNavigatorContext.Provider value={{ suspenseFallback }}>
         <WrappedNavigator {...wrapperProps} screens={screens} />
       </RelayNavigatorContext.Provider>
     );
+  };
+}
+
+export function createRouteForComponent<
+  T extends OperationType,
+  TComponent extends React.ComponentType<any>
+>(
+  name: string,
+  component: TComponent,
+  gqlQuery: GraphQLTaggedNode,
+  query: T
+): RouteDefinition<T> {
+  return {
+    name,
+    component,
+    gqlQuery,
+    getComponent: () => component,
+    query,
   };
 }

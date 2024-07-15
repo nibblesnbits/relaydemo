@@ -6,7 +6,7 @@ import ClientTable from './ClientTable';
 import { RelayScreenRouteDefinition } from '../../RootNavigation';
 
 export const ClientsQueryDef = graphql`
-  query ClientsQuery($cursor: String, $count: Int!) {
+  query ClientsQuery {
     ...ClientTable_clients
   }
 `;
@@ -14,7 +14,7 @@ export const ClientsQueryDef = graphql`
 type ClientsPageProps = Readonly<RelayRoute<ClientsQuery>>;
 
 export default function ClientsPage({ data }: ClientsPageProps) {
-  return <ClientTable query={data} />;
+  return <ClientTable fragmentRef={data} />;
 }
 
 export const route: RelayScreenRouteDefinition<ClientsQuery> = {
