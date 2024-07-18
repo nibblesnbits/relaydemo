@@ -65,8 +65,8 @@ type NavigatorFactory<ParamList extends ParamListBase> = ReturnType<
   NavigatorReturnType<ParamList, React.ComponentType<any>>
 >;
 
-type RelayRouteConfig<TEntryPointComponent> =
-  RouteDefinition<TEntryPointComponent> &
+type RelayRouteConfig<TOperationType extends OperationType> =
+  RouteDefinition<TOperationType> &
     RouteConfig<
       ParamListBase,
       keyof ParamListBase,
@@ -79,7 +79,7 @@ interface NavigatorWrapperProps<
   TPreloadedQueries extends Record<string, OperationType>,
   TNestedEntryPoints extends Record<string, EntryPoint<any, any> | undefined>
 > {
-  readonly screens: RelayRouteConfig<TPreloadedQueries, TNestedEntryPoints>[];
+  readonly screens: RelayRouteConfig<TPreloadedQueries>[];
   readonly [key: string]: any;
 }
 
@@ -92,7 +92,7 @@ export default function relayNavigatorFactory<TParamList extends ParamListBase>(
   }: NavigatorWrapperProps<any, any>) {
     return (
       <navigator.Navigator {...wrapperProps}>
-        {screens.map(({ component, ...r }) => (
+        {screens.map(({ component, name, ...r }) => (
           <navigator.Screen key={name} name={name}>
             {(props) => (
               <RelayNavigationScreen {...props} {...r} Component={component} />

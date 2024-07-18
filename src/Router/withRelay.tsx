@@ -8,6 +8,7 @@ import {
   type PreloadedQuery,
   useEntryPointLoader,
   usePreloadedQuery,
+  useQueryLoader,
   useRelayEnvironment,
 } from 'react-relay';
 import type { GraphQLTaggedNode, OperationType } from 'relay-runtime';
@@ -69,26 +70,31 @@ export type RelayRoute<T extends OperationType> = Readonly<{
   params?: T['variables'];
 }>;
 
-export type RouteDefinition<T extends OperationType> = {
-  query: OperationType;
+export type RouteDefinition<
+  TEntryPointComponent,
+  TOperationType extends OperationType
+> = {
+  query: TOperationType;
   gqlQuery: GraphQLTaggedNode;
   getComponent: () => JSResourceReference<TEntryPointComponent>;
   skeleton?: React.ReactNode | JSX.Element | (() => JSX.Element);
 };
 
-type BaseRouteDefinition = {
-  name: string;
-  component: React.ComponentType<any>;
+type RelayScreenWrapperProps<
+  TEntryPointProps extends {},
+  TOperationType extends OperationType
+> = {
+  query: GraphQLTaggedNode;
+  skeleton?: React.ReactNode | JSX.Element | (() => JSX.Element);
+  entryPoint: EntryPoint<TOperationType, TEntryPointProps>;
 };
-
-type RelayScreenWrapperProps = {};
 
 export function useRelayEnvironmentProvider() {
   const environment = useRelayEnvironment();
   return useMemo(() => ({ getEnvironment: () => environment }), [environment]);
 }
 
-function RelayScreenWrapper<TEntryPointComponent>({
+function RelayScreenWrapper<TEntryPoint, TOperationType extends OperationType>({
   fetchPolicy,
   query,
   skeleton,
@@ -96,9 +102,10 @@ function RelayScreenWrapper<TEntryPointComponent>({
   queryVars,
   gqlQuery,
   ...props
-}: RelayScreenWrapperProps) {
+}: RelayScreenWrapperProps<TEntryPoint, TOperationType>) {
   const { suspenseFallback } = useRelayNavigatorContext();
-  const [queryReference, loadQuery, disposeQuery] = useQueryLoader(query);
+  const [queryReference, loadQuery, disposeQuery] =
+    useEntryPointLoader<TEntryPoint>(query);
 
   const vars = useMemo(() => ({ ...queryVars }), [queryVars]);
 
